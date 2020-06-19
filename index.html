@@ -31,20 +31,18 @@
         <p>This practical codelab is the second installment of the Flipp Android Engineer Onboarding course. Other codelabs that are part of the course are as follows:</p>
 <ul>
 <li><a href="https://flipp-android-mvvm-codelab.github.io" target="_blank">Working with MVVM, Livedata and Databinding (Part 1)</a></li>
-<li>Working with Room (Part 3) - Coming soon</li>
+<li><a href="https://semani2.github.io" target="_blank">Working with Room (Part 3)</a></li>
 </ul>
 <h2 is-upgraded>Introduction</h2>
-<p>In this codelab you&#39;ll learn how to use <a href="https://kotlinlang.org/docs/reference/coroutines.html" target="_blank">Kotlin Coroutines</a> in the Flipp app. Coroutines are a new way of managing background threads that can simplify code by reducing the need for callbacks. Coroutines are a Kolin feature that converts async callbacks for long-running tasks, sych as database or network access, into sequential code.</p>
+<p>In this codelab you&#39;ll learn how to use <a href="https://kotlinlang.org/docs/reference/coroutines.html" target="_blank">Kotlin Coroutines</a> in the Flipp app. Coroutines are a new way of managing background threads that can simplify code by reducing the need for callbacks. Coroutines are a Kotlin feature that converts async callbacks for long-running tasks, such as database or network access, into sequential code.</p>
 <p>To understand and use Coroutines in a real world context, we will use it along with <a href="https://square.github.io/retrofit/" target="_blank">Retrofit</a>, a REST client library. You will start with the feature that was built in the first codelab (Working with MVVM, LiveData and Databinding), that uses dummy data.</p>
 <p>By the end of the codelab you will have enough experience to use coroutines and Retrofit to load data from the network, and you be able integrate coroutines into the MVVM architecture.</p>
-<p>Additionally, we will add necessary unit tests for the ViewModel and the Repository from the first codelab as we add coroutines and implement the network layer.</p>
 <h2 is-upgraded>Prerequisites</h2>
 <ul>
 <li>Completion of the first codelab of the series: <a href="https://flipp-android-mvvm-codelab.github.io" target="_blank">Working with MVVM, LiveData and Databinding</a></li>
 <li>Familiarity with Architecture components <code>ViewModel</code>, <code>LiveData</code> and <code>Repository</code>.</li>
 <li>Experience with Kotlin syntax, including extension functions and lambdas.</li>
 <li>A basic understand of using threads on Android, including the main thread, background threads and callbacks.</li>
-<li>Familiarity with <code>JUnit</code>, <code>Roboelectric</code> and <code>Mockito</code>.</li>
 </ul>
 <h2 is-upgraded>What you&#39;ll do</h2>
 <ul>
@@ -120,14 +118,14 @@
 <p>The <code>IStoreInfoApiService</code> interface holds the network layer for the feature; that is, this is the API that your <code>StoreInfoActivityViewModel</code> will use to communicate with the web service. This is the class where you will implement the Retrofit service API.</p>
 <ol type="1">
 <li>Open the file <code>IStoreInfoApiService</code> in the package <code>com.wishabi.flipp.app.storeinfo</code>. Right now the file contains only one thing: a constant for the base URL for the web service. For the purpose of this codelab, you are going to be using a mock web server, that returns a static <code>JSON</code> response.</li>
-<li>Just below the <code>companion object</code> block, define a method in the interface that defines how Retrofit talks to the web server using HTTP requests. Import <code>retorfit1.http.GET</code> and <code>retrofit2.Call</code> when requested.<pre><code>@GET(&#34;raw&#34;)
+<li>Just below the <code>companion object</code> block, define a method in the interface that defines how Retrofit talks to the web server using HTTP requests. Import <code>retorfit1.http.GET</code> and <code>retrofit2.Call</code> when requested.<pre><code>@GET(&#34;store_info&#34;)
 suspend fun getStoreInfo() : StoreInfo
 </code></pre>
-Right now the goal is to get the JSON response string from the web service, and you only need one method to do that: <code>getStoreInfo()</code>. To tell Retrofit what this method should do, use a <code>@GET</code> annotation and specify the path, or endpoint, for that web service method. In this case the endpoint is called <code>raw</code>(again, this is for the sake of this codelab, you will usually work with well defined endpoints with the Flipp backend). When the <code>getStoreInfo()</code> method is invoked, Retrofit appends the endpoint <code>raw</code> to the base URL, and creates a Call object. That Call object is used to start the request. However, latest versions of Retrofit do provide out of the box support for <code>Coroutines</code> and we can make use of this by marking these interface functions with the <code>suspend</code> keyword. This would make the method available for coroutines. Additionally, instead of returning a <code>Call</code> object, we can mark the return type as the data object. Here is the complete code for the class:<pre><code>interface IStoreInfoApiService {
+Right now the goal is to get the JSON response string from the web service, and you only need one method to do that: <code>getStoreInfo()</code>. To tell Retrofit what this method should do, use a <code>@GET</code> annotation and specify the path, or endpoint, for that web service method. In this case the endpoint is called <code>store_info</code>(again, this is for the sake of this codelab, you will usually work with well defined endpoints with the Flipp backend). When the <code>getStoreInfo()</code> method is invoked, Retrofit appends the endpoint <code>store_info</code> to the base URL, and creates a Call object. That Call object is used to start the request. However, latest versions of Retrofit do provide out of the box support for <code>Coroutines</code> and we can make use of this by marking these interface functions with the <code>suspend</code> keyword. This would make the method available for coroutines. Additionally, instead of returning a <code>Call</code> object, we can mark the return type as the data object. Here is the complete code for the class:<pre><code>interface IStoreInfoApiService {
 companion object {
-    private const val BASE_URL = &#34;https://karboosx.net/pastebin/81!edc132cab2819d6d59a94bc6d9a5b1f65d1a9b13/&#34;
+    const val BASE_URL = &#34;https://api.flipp.com/&#34;
 }
-@GET(&#34;raw&#34;)
+@GET(&#34;store_info&#34;)
 suspend fun getStoreInfo() : StoreInfo
 }
 </code></pre>
@@ -140,23 +138,29 @@ suspend fun getStoreInfo() : StoreInfo
       <google-codelab-step label="Step 3: Modify RetrofitProvider" duration="2">
         <p>Open the file <code>RetrofitProvider</code> in the package <code>com.wishabi.flipp.net.retrofit</code>, and add the following method as the last method of the class.</p>
 <pre><code>fun getRetrofitStoreInfoService(): IStoreInfoApiService {
-    val retrofit = getRetrofit(IStoreInfoApiService.BASE_URL)
-    return retrofit.create(IStoreInfoApiService::class.java)
-}
+        val retrofit = getRetrofit(IStoreInfoApiService.BASE_URL, mockInterceptor = StoreInfoMockInterceptor())
+        return retrofit.create(IStoreInfoApiService::class.java)
+    }
 </code></pre>
 <p>The Retrofit <code>create()</code> method creates the Retrofit service itself with the <code>IStoreInfoApiService</code> interface. Because this call is expensive, and the app only needs one Retrofit service instance, you expose the service to the rest of the app using an in-house <code>ServiceLocator</code> called <code>InjectableHelper</code>. Now that all the setup is done, you can access this Retrofit service as follows:</p>
 <pre><code>val storeInfoApiService = ServiceManager.getService(RetrofitProvider::class.java).getRetrofitStoreInfoService()
 </code></pre>
+<p>Additionally, we have included a <code>MockInterceptor</code> called <code>StoreInfoMockInterceptor</code>. This interceptor helps mock the response to the <code>store_info</code> endpoint.</p>
 <p>Here is the complete code for the class:</p>
 <pre><code>@Mockable
 class RetrofitProvider : InjectableHelper() {
 
-    private fun getRetrofit(baseUrl: String, secondsToTimeOut: Long = 30L): Retrofit {
+    private fun getRetrofit(baseUrl: String, secondsToTimeOut: Long = 30L, mockInterceptor: Interceptor? = null): Retrofit {
 
-        val okHttpClient: OkHttpClient = OkHttpClient.Builder()
+        val okHttpClientBuilder = OkHttpClient.Builder()
             .readTimeout(secondsToTimeOut, TimeUnit.SECONDS)
             .connectTimeout(secondsToTimeOut, TimeUnit.SECONDS)
-            .build()
+
+        mockInterceptor?.let {
+            okHttpClientBuilder.addInterceptor(it)
+        }
+
+        val okHttpClient = okHttpClientBuilder.build()
 
         val retrofitBuilder = Retrofit.Builder()
             .baseUrl(baseUrl)
@@ -188,7 +192,7 @@ class RetrofitProvider : InjectableHelper() {
     }
 
     fun getRetrofitStoreInfoService(): IStoreInfoApiService {
-        val retrofit = getRetrofit(IStoreInfoApiService.BASE_URL)
+        val retrofit = getRetrofit(IStoreInfoApiService.BASE_URL, mockInterceptor = StoreInfoMockInterceptor())
         return retrofit.create(IStoreInfoApiService::class.java)
     }
 }
